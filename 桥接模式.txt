@@ -1,0 +1,82 @@
+#include <iostream>
+/*桥接模式：
+    把抽象和具体的方法实现分离开来，使他们可以独立的变化
+    如：手机品牌和手机软件是两个概念，不同的手机可以有相同的软件
+    不同的软件可以安装在相同的手机上。两者都具有很大的变动性并且耦合很大。
+    如果单独以手机品牌或软件来继承拓展的话，变动非常大。
+    所以把手机和软件分离开，各自继承拓展，要使用是连接上他们的关联。
+    eg:要实现用AbstrustA或AbstructB实现TimeA或TimeBf方法
+    把AbstructA和AbstructB...实现一个基类Abstruct，当要扩展时直接继承
+    Abstruct类，方便快捷，而且不影响Time类
+    同理，Time类也一样。
+
+
+*/
+
+
+using namespace std;
+ class TimeBasic{
+ public :
+     TimeBasic(){
+     cout<<"TimeBasic 构造"<<endl;
+     }
+     virtual void operatora()=0;
+ };
+ class TimeA :public TimeBasic{
+ public :
+     TimeA(){
+     cout<<"TimeA 构造"<<endl;
+     }
+     void operatora(){
+       cout<<"operatora A  A!!"<<endl;
+       }
+};
+class TimeB :public TimeBasic{
+ public :
+     TimeB(){
+     cout<<"TimeB 构造"<<endl;
+     }
+     void operatora(){
+       cout<<"operatora B  B!!"<<endl;
+       }
+};
+class AbstructBasic {
+    protected:
+        TimeBasic * TB;
+    public :
+        virtual void operatora(){
+           TB->operatora();
+        };
+    };
+
+ class AbstructA :public AbstructBasic{
+   public:
+       AbstructA(TimeBasic *t){
+         TB=t;
+         cout<<"AbstructA 构造"<<endl;
+        }
+ };
+ class AbstructB :public AbstructBasic{
+     public:
+       AbstructB(TimeBasic *t){
+            TB=t;
+            cout <<"AbstructB 构造"<<endl;
+       }
+
+ };
+
+int main()
+{
+    //创建一个TimeA对象，指针ta指向该对象
+    /*
+    创建一个AbstructB对象，并让AbstructBasci基类指针指向他
+    创建AbstructB对象时，构造函数把ta赋值给TimeBasic指针TB，
+    AB调用operatora方法，AbstructBasic的operatora方法又调用
+    TB所指向的对象的operatora方法
+    */
+    TimeA *ta=new TimeA();
+    AbstructBasic *AB=new AbstructB(ta);
+    AB->operatora();
+}
+
+

@@ -1,0 +1,18 @@
+git init 初始化仓库
+git config --global user.name "yourname" 配置本机上自己的名字
+git config --global user.email "youremail"配置本机上自己的邮箱
+git add filename 添加文件到暂存区（index区)
+git commit -m "备注" 添加文件到版本库的HEAD区
+git log   查看操作日志
+git diff filename 查看该文件的修改内容
+撤销工作区的修改:
+git checkout -- filename 
+撤销暂存区的修改:
+git reset HEAD filenam 恢复暂存区到当前文件
+git checkout -- filename 
+撤销版本库的修改：
+git log   查看日志的commit-id
+git reset --hard commit-id  回退到该版本
+恢复之前撤销过的版本：
+git reflog  查看操作日志的commit-id
+git reset --hard commit-id 

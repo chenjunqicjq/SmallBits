@@ -1,0 +1,154 @@
+#include <iostream>
+#include<vector>
+/*观察者模式，可以理解为订阅，发布来理解
+被观察者类似公众号，观察者类似用户
+被观察者中用一个数组来存放观察者，当被观察者中数据更新时向
+观察者推送
+观察者则在新建对象时就将自身加入被观察者的数组中
+所以这是一个双向通信
+*/
+using namespace std;
+class Observer;
+//被观察者
+class SubJect{
+public :
+    virtual void Add(Observer *t)=0;
+    virtual void Notify()=0;
+    ~SubJect(){
+        cout<<"Subject 析构"<<endl;
+    }
+};
+//观察者
+class Observer{
+private:
+    SubJect *s;
+public :
+    Observer(SubJect *t){
+        this->s=t;
+        s->Add(this);
+    }
+    virtual void Update(int x,int y)=0;
+    ~Observer(){
+        cout<<"Observer 析构"<<endl;
+    }
+};
+class ConoreatSubJectA :public SubJect{
+private :
+    int x,y;
+    vector <Observer *> vec;
+public:
+    ConoreatSubJectA(){
+        x=0;
+        y=0;
+    }
+    ConoreatSubJectA(int x,int y){
+        this->x=x;
+        this->y=y;
+    }
+    void Add(Observer *t){
+        vec.push_back(t);
+    }
+    void Notify(){
+        vector <Observer *> ::iterator ita;
+        for(it=vec.begin();it!=vec.end();it++){
+           (*it)->Update(x,y);
+        }
+    }
+    void DateChange(int x,int y){
+        this->x=x;
+        this->y=y;
+        Notify();
+    }
+    ~ConoreatSubJectA(){
+        cout<<"ConorartSubJectA 析构"<<endl;
+    }
+} ;
+class ConoreatSubJectB: public SubJect{
+private :
+    int x,y;
+    vector<Observer *> vec;
+public:
+    ConoreatSubJectB(){
+        x=0;
+        y=0;
+    }
+    ConoreatSubJectB(int x,int y){
+        this->x=x;
+        this->y=y;
+    }
+    void Add(Observer *t){
+        vec.push_back(t);
+    }
+    void Notify(){
+        vector <Observer *> ::iterator it;
+        for(it=vec.begin();it!=vec.end();it++){
+            (*it)->Update(x,y);
+        }
+    }
+    void DateChange(int x,int y){
+        this->x=x;
+        this->y=y;
+        Notify();
+    }
+     ~ConoreatSubJectB(){
+        cout<<"ConorartSubJectB 析构"<<endl;
+    }
+};
+
+class ConoreatObserverA:public Observer{
+private :
+    int x,y;
+public :
+    ConoreatObserverA(SubJect *t):Observer(t){
+
+    }
+    void Update(int x,int y){
+        this->x=x;
+        this->y=y;
+        cout<<x<<endl;
+    }
+    ~ConoreatObserverA(){
+        cout<<"ConoreatObserverA 析构"<<endl;
+    }
+};
+class ConoreatObserverB:public Observer{
+private :
+    int x,y;
+public :
+    ConoreatObserverB(SubJect *t):Observer(t){
+
+    }
+    void Update(int x,int y){
+        this->x=x;
+        this->y=y;
+        cout<<x<<endl;
+    }
+    ~ConoreatObserverB(){
+        cout<<"ConoreatObserverB 析构"<<endl;
+    }
+};
+int main()
+{
+   //观察者A B同时观察A
+   ConoreatSubJectA *su=new ConoreatSubJectA();
+   ConoreatObserverA *ob1=new ConoreatObserverA(su);
+   ConoreatObserverB *ob2=new ConoreatObserverB(su);
+   su->Notify();
+   su->DateChange(3,5);
+   delete ob2;
+   delete ob1;
+   delete su;
+}
+/*ob1指向的对象创建过程：new 一个对象，分配空间，此时有一个this指针指向该对象
+     调用ConoreatObserverA的构造函数，但又继承于Observer类，
+    调用父类Observer的构造方法    this->s=t;此时的this是Observer的指针
+     s->Add(this)这的this则是该对象（ConoreatObserverA）的指针
+     Add方法多态到子类ConoreatSubJect中，则把对象ConoreatObserverA放入
+     ConoreatSubJectde数组中。最后再将指针ob1指向ConoreatObserverA对象
+ob2 同理
+此时指针su所指的对象(ConoreatSubJectA)的数组中有元素ob1,ob2（ob1,ob2所指的对象）
+    调用Notify()方法，就近原则，循环， (*it)->Update(x,y); it为数组指针
+    (*it)为数组的元素，调用Update()方法，多态，执行该对象的Update()方法
+      给每个观察者发送消息
+    调用DateChange()方法 ,同理；
+  */  

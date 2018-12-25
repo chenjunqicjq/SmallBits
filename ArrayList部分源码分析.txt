@@ -1,0 +1,1043 @@
+
+public class ArrayList<E> extends AbstractList<E>
+        implements List<E>, RandomAccess, Cloneable, java.io.Serializable
+{
+    private static final long serialVersionUID = 8683452581122892189L;
+    //默认初始容量
+	private static final int DEFAULT_CAPACITY = 10;
+    //默认空构造，当elementDate==EMPTY_ELEMENTDATA时，首次添加元素会使大小扩容到DEFAULT_CAPACITY。
+    private static final Object[] EMPTY_ELEMENTDATA = {};
+    //transient关键字使不对该区域序列化，ArratList内部重写了序列化/反序列化
+	transient Object[] elementData; // non-private to simplify nested class access
+    //数组的大小
+    private int size;
+    //指定大小的初始化 
+    public ArrayList(int initialCapacity) {
+        super();
+        if (initialCapacity < 0)
+            throw new IllegalArgumentException("Illegal Capacity: "+
+                                               initialCapacity);
+        this.elementData = new Object[initialCapacity];
+    }
+    //按照EMPTY_ELEMENTDATA初始化，
+	//实际并没有建立缓冲区，在添加第一个元素使扩容到DEFAULT_CAPACITY
+    public ArrayList() {
+        super();
+        this.elementData = EMPTY_ELEMENTDATA;
+    }
+    //根据其他集合对象创建
+    public ArrayList(Collection<? extends E> c) {
+        elementData = c.toArray();
+        size = elementData.length;
+        // c.toArray might (incorrectly) not return Object[] (see 6260652)
+        //当toArray返回类型不是Object类时，通过copyOf进行强转
+		if (elementData.getClass() != Object[].class)
+            elementData = Arrays.copyOf(elementData, size, Object[].class);
+    }
+	//修剪大小，把数组内多余的空位减去，
+	//如数组长度为10，但只有4个值，调用该方法把空余的6个位置剪去
+    public void trimToSize() {
+        modCount++;
+        if (size < elementData.length) {
+            elementData = Arrays.copyOf(elementData, size);
+        }
+    }
+   
+    public void ensureCapacity(int minCapacity) {
+        int minExpand = (elementData != EMPTY_ELEMENTDATA）? 0: DEFAULT_CAPACITY;
+
+        if (minCapacity > minExpand) {
+            ensureExplicitCapacity(minCapacity);
+        }
+    }
+     //确认内部容量
+    private void ensureCapacityInternal(int minCapacity) {
+        // 对于默认构造器创建的实例, 保证容量不小于DEFAULT_CAPACITY
+		if (elementData == EMPTY_ELEMENTDATA) {
+            minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);
+        }
+
+        ensureExplicitCapacity(minCapacity);
+    }
+     //确认扩展容量
+    private void ensureExplicitCapacity(int minCapacity) {
+        //记录结构变化的次数
+		modCount++;
+        if (minCapacity - elementData.length > 0)
+            grow(minCapacity);
+    }
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+     //扩容
+    private void grow(int minCapacity) {
+        int oldCapacity = elementData.length;
+        //计算扩容后的容量，默认为以前的1.5倍
+		int newCapacity = oldCapacity + (oldCapacity >> 1);
+        //新容量小于老的大小，则把老的大小作为新的容量大小
+		if (newCapacity - minCapacity < 0)
+            newCapacity = minCapacity;
+        //新容量超过最大值，大于数组最大值，则返回Integer.MAX_VALUE
+		if (newCapacity - MAX_ARRAY_SIZE > 0)
+            newCapacity = hugeCapacity(minCapacity);
+        // minCapacity is usually close to size, so this is a win:
+        //把以前的数组复制进扩容后的数组
+		elementData = Arrays.copyOf(elementData, newCapacity);
+    }
+
+    private static int hugeCapacity(int minCapacity) {
+        if (minCapacity < 0) // overflow
+            throw new OutOfMemoryError();
+        return (minCapacity > MAX_ARRAY_SIZE) ?
+            Integer.MAX_VALUE :
+            MAX_ARRAY_SIZE;
+    }
+ 
+    public int size() {
+        return size;
+    }
+
+   
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    public boolean contains(Object o) {
+        return indexOf(o) >= 0;
+    }
+
+     //查找元素的下标
+    public int indexOf(Object o) {
+        if (o == null) {
+            for (int i = 0; i < size; i++)
+                if (elementData[i]==null)
+                    return i;
+        } else {
+            for (int i = 0; i < size; i++)
+                if (o.equals(elementData[i]))
+                    return i;
+        }
+        return -1;
+    }
+    
+    public int lastIndexOf(Object o) {
+        if (o == null) {
+            for (int i = size-1; i >= 0; i--)
+                if (elementData[i]==null)
+                    return i;
+        } else {
+            for (int i = size-1; i >= 0; i--)
+                if (o.equals(elementData[i]))
+                    return i;
+        }
+        return -1;
+    }
+
+    //克隆
+    public Object clone() {
+        try {
+            ArrayList<?> v = (ArrayList<?>) super.clone();
+            v.elementData = Arrays.copyOf(elementData, size);
+            v.modCount = 0;
+            return v;
+        } catch (CloneNotSupportedException e) {
+            // this shouldn't happen, since we are Cloneable
+            throw new InternalError(e);
+        }
+    }
+
+    //把ArrayList转化为数组
+    public Object[] toArray() {
+        return Arrays.copyOf(elementData, size);
+    }
+     //把集合转化为数组
+    @SuppressWarnings("unchecked")
+    public <T> T[] toArray(T[] a) {
+        if (a.length < size)
+            // Make a new array of a's runtime type, but my contents:
+            return (T[]) Arrays.copyOf(elementData, size, a.getClass());
+        System.arraycopy(elementData, 0, a, 0, size);
+        if (a.length > size)
+            a[size] = null;
+        return a;
+    }
+
+    // Positional Access Operations
+    //访问index位置的元素
+    @SuppressWarnings("unchecked")
+    E elementData(int index) {
+        return (E) elementData[index];
+    }
+
+    /**
+     * Returns the element at the specified position in this list.
+     *
+     * @param  index index of the element to return
+     * @return the element at the specified position in this list
+     * @throws IndexOutOfBoundsException {@inheritDoc}
+     */
+    public E get(int index) {
+        //检查是否超过数组大小
+		rangeCheck(index);
+
+        return elementData(index);
+    }
+     //修改某位置的元素。结构未改变，modcount不用改变
+    public E set(int index, E element) {
+        rangeCheck(index);
+
+        E oldValue = elementData(index);
+        elementData[index] = element;
+        return oldValue;
+    }
+     //添加元素
+    public boolean add(E e) {
+        //检查是否超过数组大小，超过则扩容
+		ensureCapacityInternal(size + 1);  // Increments modCount!!
+        elementData[size++] = e;
+        return true;
+    }
+
+    //添加元素到指定位置，添加后，原数组从该位置依次往后移动位置
+	//例：1357   add(1,9)
+	//    19357
+    public void add(int index, E element) {
+        rangeCheckForAdd(index);
+
+        ensureCapacityInternal(size + 1);  // Increments modCount!!
+        System.arraycopy(elementData, index, elementData, index + 1,
+                         size - index);
+        elementData[index] = element;
+        size++;
+    }
+    //删除指定位置的元素，数据结构改变，元素删除后，后面的元素依次往前移
+    public E remove(int index) {
+        rangeCheck(index);
+
+        modCount++;
+        E oldValue = elementData(index);
+
+        int numMoved = size - index - 1;
+        if (numMoved > 0)
+            System.arraycopy(elementData, index+1, elementData, index,
+                             numMoved);
+		//数组大小减一
+        elementData[--size] = null; // clear to let GC do its work
+
+        return oldValue;
+    }
+    //删除指定元素
+    public boolean remove(Object o) {
+        if (o == null) {
+            for (int index = 0; index < size; index++)
+                if (elementData[index] == null) {
+                    fastRemove(index);
+                    return true;
+                }
+        } else {
+            for (int index = 0; index < size; index++)
+                if (o.equals(elementData[index])) {
+                    fastRemove(index);
+                    return true;
+                }
+        }
+        return false;
+    }
+
+    private void fastRemove(int index) {
+        modCount++;
+        int numMoved = size - index - 1;
+        if (numMoved > 0)
+            System.arraycopy(elementData, index+1, elementData, index,
+                             numMoved);
+        elementData[--size] = null; // clear to let GC do its work
+    }
+    //清除数组
+    public void clear() {
+        modCount++;
+
+        
+        for (int i = 0; i < size; i++)
+            elementData[i] = null;
+
+        size = 0;
+    }
+
+    //在数组尾部添加集合元素
+    public boolean addAll(Collection<? extends E> c) {
+        Object[] a = c.toArray();
+        int numNew = a.length;
+        ensureCapacityInternal(size + numNew);  // Increments modCount
+        System.arraycopy(a, 0, elementData, size, numNew);
+        size += numNew;
+        return numNew != 0;
+    }
+
+     //添加集合到指定位置
+    public boolean addAll(int index, Collection<? extends E> c) {
+        rangeCheckForAdd(index);
+
+        Object[] a = c.toArray();
+        int numNew = a.length;
+        ensureCapacityInternal(size + numNew);  // Increments modCount
+
+        int numMoved = size - index;
+        if (numMoved > 0)
+            System.arraycopy(elementData, index, elementData, index + numNew,
+                             numMoved);
+
+        System.arraycopy(a, 0, elementData, index, numNew);
+        size += numNew;
+        return numNew != 0;
+    }
+
+    //删除一段指定位置的元素
+    protected void removeRange(int fromIndex, int toIndex) {
+        modCount++;
+        int numMoved = size - toIndex;
+        System.arraycopy(elementData, toIndex, elementData, fromIndex,
+                         numMoved);
+
+        // clear to let GC do its work
+        int newSize = size - (toIndex-fromIndex);
+        for (int i = newSize; i < size; i++) {
+            elementData[i] = null;
+        }
+        size = newSize;
+    }
+
+    private void rangeCheck(int index) {
+        if (index >= size)
+            throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+    }
+
+    private void rangeCheckForAdd(int index) {
+        if (index > size || index < 0)
+            throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+    }
+
+    private String outOfBoundsMsg(int index) {
+        return "Index: "+index+", Size: "+size;
+    }
+    //移除所有包含在容器c中的元素
+    public boolean removeAll(Collection<?> c) {
+        Objects.requireNonNull(c);
+		//注意这的false
+        return batchRemove(c, false);
+    }
+    //移除所有不包含在容器c中的元素
+    public boolean retainAll(Collection<?> c) {
+        Objects.requireNonNull(c);
+        return batchRemove(c, true);
+    }
+
+    private boolean batchRemove(Collection<?> c, boolean complement) {
+        final Object[] elementData = this.elementData;
+        int r = 0, w = 0;
+        boolean modified = false;
+        try {
+            for (; r < size; r++)
+			//根据传入的complement值的不同，把需要保留的元素移到数组的前部
+                if (c.contains(elementData[r]) == complement)
+                    elementData[w++] = elementData[r];
+        } finally {
+			//即使c.contains抛出异常，任然执行操作
+			//r!=size 说明有异常，则把从异常位置后的元素都放入数组
+            if (r != size) {
+                System.arraycopy(elementData, r,
+                                 elementData, w,
+                                 size - r);
+                w += size - r;
+            }
+			//w!=size 说明有元素被删除，则把数组后面的元素都赋空
+            if (w != size) {
+                // clear to let GC do its work
+                for (int i = w; i < size; i++)
+                    elementData[i] = null;
+                modCount += size - w;
+                size = w;
+                modified = true;
+            }
+        }
+        return modified;
+    }
+
+    /**
+     * Save the state of the <tt>ArrayList</tt> instance to a stream (that
+     * is, serialize it).
+     *
+     * @serialData The length of the array backing the <tt>ArrayList</tt>
+     *             instance is emitted (int), followed by all of its elements
+     *             (each an <tt>Object</tt>) in the proper order.
+     */
+    private void writeObject(java.io.ObjectOutputStream s)
+        throws java.io.IOException{
+        // Write out element count, and any hidden stuff
+        int expectedModCount = modCount;
+        s.defaultWriteObject();
+
+        // Write out size as capacity for behavioural compatibility with clone()
+        s.writeInt(size);
+
+        // Write out all elements in the proper order.
+        for (int i=0; i<size; i++) {
+            s.writeObject(elementData[i]);
+        }
+
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+    }
+
+    /**
+     * Reconstitute the <tt>ArrayList</tt> instance from a stream (that is,
+     * deserialize it).
+     */
+    private void readObject(java.io.ObjectInputStream s)
+        throws java.io.IOException, ClassNotFoundException {
+        elementData = EMPTY_ELEMENTDATA;
+
+        // Read in size, and any hidden stuff
+        s.defaultReadObject();
+
+        // Read in capacity
+        s.readInt(); // ignored
+
+        if (size > 0) {
+            // be like clone(), allocate array based upon size not capacity
+            ensureCapacityInternal(size);
+
+            Object[] a = elementData;
+            // Read in all elements in the proper order.
+            for (int i=0; i<size; i++) {
+                a[i] = s.readObject();
+            }
+        }
+    }
+
+   
+    public ListIterator<E> listIterator(int index) {
+        if (index < 0 || index > size)
+            throw new IndexOutOfBoundsException("Index: "+index);
+        return new ListItr(index);
+    }
+
+    public ListIterator<E> listIterator() {
+        return new ListItr(0);
+    }
+
+    public Iterator<E> iterator() {
+        return new Itr();
+    }
+
+
+    private class Itr implements Iterator<E> {
+        //游标，表示下一个元素的索引位置
+		int cursor;       // index of next element to return
+        //游标，表示上一个元素的索引位置
+	    int lastRet = -1; // index of last element returned; -1 if no such
+        int expectedModCount = modCount;
+        //判断是否有下一个元素
+        public boolean hasNext() {
+            return cursor != size;
+        }
+
+        @SuppressWarnings("unchecked")
+		//返回下一个元素
+        public E next() {
+            checkForComodification();
+            int i = cursor;
+            //如果大于元素个数，则找不到
+			if (i >= size)
+                throw new NoSuchElementException();
+            Object[] elementData = ArrayList.this.elementData;
+            //如果大于数组长度
+			if (i >= elementData.length)
+                throw new ConcurrentModificationException();
+            cursor = i + 1;
+            return (E) elementData[lastRet = i];
+        }
+        //删除集合上一次next方法返回的元素
+        public void remove() {
+            if (lastRet < 0)
+                throw new IllegalStateException();
+            checkForComodification();
+
+            try {
+                ArrayList.this.remove(lastRet);
+                cursor = lastRet;
+                lastRet = -1;
+                expectedModCount = modCount;
+            } catch (IndexOutOfBoundsException ex) {
+                throw new ConcurrentModificationException();
+            }
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void forEachRemaining(Consumer<? super E> consumer) {
+            Objects.requireNonNull(consumer);
+            final int size = ArrayList.this.size;
+            int i = cursor;
+            if (i >= size) {
+                return;
+            }
+            final Object[] elementData = ArrayList.this.elementData;
+            if (i >= elementData.length) {
+                throw new ConcurrentModificationException();
+            }
+            while (i != size && modCount == expectedModCount) {
+                consumer.accept((E) elementData[i++]);
+            }
+            // update once at end of iteration to reduce heap write traffic
+            cursor = i;
+            lastRet = i - 1;
+            checkForComodification();
+        }
+
+        final void checkForComodification() {
+            if (modCount != expectedModCount)
+                throw new ConcurrentModificationException();
+        }
+    }
+
+    /**
+     * An optimized version of AbstractList.ListItr
+     */
+    private class ListItr extends Itr implements ListIterator<E> {
+        ListItr(int index) {
+            super();
+            cursor = index;
+        }
+
+        public boolean hasPrevious() {
+            return cursor != 0;
+        }
+        //下一个元素下标
+        public int nextIndex() {
+            return cursor;
+        }
+        //上一个元素下标
+		//从return内容可以验证，在遍历时，游标cursor并不是直接指在元素下
+		//而是停留在两个元素中间
+        public int previousIndex() {
+            return cursor - 1;
+        }
+        //返回前一个元素
+        @SuppressWarnings("unchecked")
+        public E previous() {
+            checkForComodification();
+            int i = cursor - 1;
+            if (i < 0)
+                throw new NoSuchElementException();
+            Object[] elementData = ArrayList.this.elementData;
+            if (i >= elementData.length)
+                throw new ConcurrentModificationException();
+            cursor = i;
+            return (E) elementData[lastRet = i];
+        }
+        //替换上一次操作的元素
+        public void set(E e) {
+            if (lastRet < 0)
+                throw new IllegalStateException();
+            checkForComodification();
+
+            try {
+                ArrayList.this.set(lastRet, e);
+            } catch (IndexOutOfBoundsException ex) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        //在上一次操作的元素后添加一个元素
+        public void add(E e) {
+            checkForComodification();
+
+            try {
+                int i = cursor;
+                ArrayList.this.add(i, e);
+                cursor = i + 1;
+                lastRet = -1;
+                expectedModCount = modCount;
+            } catch (IndexOutOfBoundsException ex) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    /**
+     * Returns a view of the portion of this list between the specified
+     * {@code fromIndex}, inclusive, and {@code toIndex}, exclusive.  (If
+     * {@code fromIndex} and {@code toIndex} are equal, the returned list is
+     * empty.)  The returned list is backed by this list, so non-structural
+     * changes in the returned list are reflected in this list, and vice-versa.
+     * The returned list supports all of the optional list operations.
+     *
+     * <p>This method eliminates the need for explicit range operations (of
+     * the sort that commonly exist for arrays).  Any operation that expects
+     * a list can be used as a range operation by passing a subList view
+     * instead of a whole list.  For example, the following idiom
+     * removes a range of elements from a list:
+     * <pre>
+     *      list.subList(from, to).clear();
+     * </pre>
+     * Similar idioms may be constructed for {@link #indexOf(Object)} and
+     * {@link #lastIndexOf(Object)}, and all of the algorithms in the
+     * {@link Collections} class can be applied to a subList.
+     *
+     * <p>The semantics of the list returned by this method become undefined if
+     * the backing list (i.e., this list) is <i>structurally modified</i> in
+     * any way other than via the returned list.  (Structural modifications are
+     * those that change the size of this list, or otherwise perturb it in such
+     * a fashion that iterations in progress may yield incorrect results.)
+     *
+     * @throws IndexOutOfBoundsException {@inheritDoc}
+     * @throws IllegalArgumentException {@inheritDoc}
+     */
+    public List<E> subList(int fromIndex, int toIndex) {
+        subListRangeCheck(fromIndex, toIndex, size);
+		//子序列是左闭右开
+        return new SubList(this, 0, fromIndex, toIndex);
+    }
+
+    static void subListRangeCheck(int fromIndex, int toIndex, int size) {
+        if (fromIndex < 0)
+            throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
+        if (toIndex > size)
+            throw new IndexOutOfBoundsException("toIndex = " + toIndex);
+        if (fromIndex > toIndex)
+            throw new IllegalArgumentException("fromIndex(" + fromIndex +
+                                               ") > toIndex(" + toIndex + ")");
+    }
+
+    private class SubList extends AbstractList<E> implements RandomAccess {
+        private final AbstractList<E> parent;
+        private final int parentOffset;//父集合的起始位置
+        private final int offset;//原对象的起始位置
+        int size;
+
+        SubList(AbstractList<E> parent,
+                int offset, int fromIndex, int toIndex) {
+            //引用父对象，一直引用，导致不能被回收，占用内存，容易造成内存溢出
+			this.parent = parent;
+            this.parentOffset = fromIndex;
+            this.offset = offset + fromIndex;
+            this.size = toIndex - fromIndex;
+            this.modCount = ArrayList.this.modCount;
+        }
+
+        public E set(int index, E e) {
+            //判断大小是否异常
+			rangeCheck(index);
+			//判断结构是否被改变
+            checkForComodification();
+            E oldValue = ArrayList.this.elementData(offset + index);
+            ArrayList.this.elementData[offset + index] = e;
+            return oldValue;
+        }
+
+        public E get(int index) {
+            rangeCheck(index);
+            checkForComodification();
+            return ArrayList.this.elementData(offset + index);
+        }
+
+        public int size() {
+            checkForComodification();
+            return this.size;
+        }
+        //添加一个元素到指定位置，
+		//子序列改变结构，引起父序列改变
+        public void add(int index, E e) {
+            rangeCheckForAdd(index);
+            checkForComodification();
+            parent.add(parentOffset + index, e);
+            this.modCount = parent.modCount;
+            this.size++;
+        }
+        //移除指定元素
+        public E remove(int index) {
+            rangeCheck(index);
+            checkForComodification();
+            E result = parent.remove(parentOffset + index);
+            this.modCount = parent.modCount;
+            this.size--;
+            return result;
+        }
+        //移除一段元素
+        protected void removeRange(int fromIndex, int toIndex) {
+            checkForComodification();
+            parent.removeRange(parentOffset + fromIndex,
+                               parentOffset + toIndex);
+            this.modCount = parent.modCount;
+            this.size -= toIndex - fromIndex;
+        }
+        //添加一个容器到子序列中
+        public boolean addAll(Collection<? extends E> c) {
+            return addAll(this.size, c);
+        }
+
+        public boolean addAll(int index, Collection<? extends E> c) {
+            rangeCheckForAdd(index);
+            int cSize = c.size();
+            if (cSize==0)
+                return false;
+
+            checkForComodification();
+            parent.addAll(parentOffset + index, c);
+            this.modCount = parent.modCount;
+            this.size += cSize;
+            return true;
+        }
+
+        public Iterator<E> iterator() {
+            return listIterator();
+        }
+        //子序列的迭代器，在一个内部类中实现，代码和父集合基本一致
+        public ListIterator<E> listIterator(final int index) {
+            checkForComodification();
+            rangeCheckForAdd(index);
+            final int offset = this.offset;
+
+            return new ListIterator<E>() {
+                int cursor = index;
+                int lastRet = -1;
+                int expectedModCount = ArrayList.this.modCount;
+
+                public boolean hasNext() {
+                    return cursor != SubList.this.size;
+                }
+
+                @SuppressWarnings("unchecked")
+                public E next() {
+                    checkForComodification();
+                    int i = cursor;
+                    if (i >= SubList.this.size)
+                        throw new NoSuchElementException();
+                    Object[] elementData = ArrayList.this.elementData;
+                    if (offset + i >= elementData.length)
+                        throw new ConcurrentModificationException();
+                    cursor = i + 1;
+                    return (E) elementData[offset + (lastRet = i)];
+                }
+
+                public boolean hasPrevious() {
+                    return cursor != 0;
+                }
+
+                @SuppressWarnings("unchecked")
+                public E previous() {
+                    checkForComodification();
+                    int i = cursor - 1;
+                    if (i < 0)
+                        throw new NoSuchElementException();
+                    Object[] elementData = ArrayList.this.elementData;
+                    if (offset + i >= elementData.length)
+                        throw new ConcurrentModificationException();
+                    cursor = i;
+                    return (E) elementData[offset + (lastRet = i)];
+                }
+
+                @SuppressWarnings("unchecked")
+                public void forEachRemaining(Consumer<? super E> consumer) {
+                    Objects.requireNonNull(consumer);
+                    final int size = SubList.this.size;
+                    int i = cursor;
+                    if (i >= size) {
+                        return;
+                    }
+                    final Object[] elementData = ArrayList.this.elementData;
+                    if (offset + i >= elementData.length) {
+                        throw new ConcurrentModificationException();
+                    }
+                    while (i != size && modCount == expectedModCount) {
+                        consumer.accept((E) elementData[offset + (i++)]);
+                    }
+                    // update once at end of iteration to reduce heap write traffic
+                    lastRet = cursor = i;
+                    checkForComodification();
+                }
+
+                public int nextIndex() {
+                    return cursor;
+                }
+
+                public int previousIndex() {
+                    return cursor - 1;
+                }
+
+                public void remove() {
+                    if (lastRet < 0)
+                        throw new IllegalStateException();
+                    checkForComodification();
+
+                    try {
+                        SubList.this.remove(lastRet);
+                        cursor = lastRet;
+                        lastRet = -1;
+                        expectedModCount = ArrayList.this.modCount;
+                    } catch (IndexOutOfBoundsException ex) {
+                        throw new ConcurrentModificationException();
+                    }
+                }
+
+                public void set(E e) {
+                    if (lastRet < 0)
+                        throw new IllegalStateException();
+                    checkForComodification();
+
+                    try {
+                        ArrayList.this.set(offset + lastRet, e);
+                    } catch (IndexOutOfBoundsException ex) {
+                        throw new ConcurrentModificationException();
+                    }
+                }
+
+                public void add(E e) {
+                    checkForComodification();
+
+                    try {
+                        int i = cursor;
+                        SubList.this.add(i, e);
+                        cursor = i + 1;
+                        lastRet = -1;
+                        expectedModCount = ArrayList.this.modCount;
+                    } catch (IndexOutOfBoundsException ex) {
+                        throw new ConcurrentModificationException();
+                    }
+                }
+
+                final void checkForComodification() {
+                    if (expectedModCount != ArrayList.this.modCount)
+                        throw new ConcurrentModificationException();
+                }
+            };
+        }
+
+        public List<E> subList(int fromIndex, int toIndex) {
+            subListRangeCheck(fromIndex, toIndex, size);
+            return new SubList(this, offset, fromIndex, toIndex);
+        }
+
+        private void rangeCheck(int index) {
+            if (index < 0 || index >= this.size)
+                throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+        }
+
+        private void rangeCheckForAdd(int index) {
+            if (index < 0 || index > this.size)
+                throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+        }
+
+        private String outOfBoundsMsg(int index) {
+            return "Index: "+index+", Size: "+this.size;
+        }
+
+        private void checkForComodification() {
+            if (ArrayList.this.modCount != this.modCount)
+                throw new ConcurrentModificationException();
+        }
+
+        public Spliterator<E> spliterator() {
+            checkForComodification();
+            return new ArrayListSpliterator<E>(ArrayList.this, offset,
+                                               offset + this.size, this.modCount);
+        }
+    }
+    //forEach
+	//就是一个for循环
+    @Override
+    public void forEach(Consumer<? super E> action) {
+        Objects.requireNonNull(action);
+        final int expectedModCount = modCount;
+        @SuppressWarnings("unchecked")
+        final E[] elementData = (E[]) this.elementData;
+        final int size = this.size;
+        for (int i=0; modCount == expectedModCount && i < size; i++) {
+            action.accept(elementData[i]);
+        }
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+    }
+
+    @Override
+    public Spliterator<E> spliterator() {
+        return new ArrayListSpliterator<>(this, 0, -1, 0);
+    }
+
+    /** Index-based split-by-two, lazily initialized Spliterator */
+	//基于索引，二分的分割器
+    static final class ArrayListSpliterator<E> implements Spliterator<E> {
+
+
+        private final ArrayList<E> list;
+        //起始位置
+		private int index; // current index, modified on advance/split
+        //结束位置，-1表示到最后一个元素
+		//二分，左闭右开序列
+		private int fence; // -1 until used; then one past last index
+        private int expectedModCount; // initialized when fence set
+        ArrayListSpliterator(ArrayList<E> list, int origin, int fence,
+                             int expectedModCount) {
+            this.list = list; 
+            this.index = origin;
+            this.fence = fence;
+            this.expectedModCount = expectedModCount;
+        }
+        //第一次使用时实例化结束位置
+        private int getFence() { // initialize fence to size on first use
+            int hi; // (a specialized variant appears in method forEach)
+            ArrayList<E> lst;
+            if ((hi = fence) < 0) {
+			//只有在第一次时fence<0;
+                if ((lst = list) == null)
+				//如果list集合中没有元素
+                    hi = fence = 0;
+                else {
+                    expectedModCount = lst.modCount;
+                    hi = fence = lst.size;
+                }
+            }
+            return hi;
+        }
+
+        public ArrayListSpliterator<E> trySplit() {
+            //递归，满足条件，再二分，类似于分治思想
+			int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
+            return (lo >= mid) ? null :new ArrayListSpliterator<E>(list, lo, index = mid,
+                                            expectedModCount);
+        }
+        //返回true 时，只表示可能还有元素未处理
+        //返回false 时，没有剩余元素处理了
+        public boolean tryAdvance(Consumer<? super E> action) {
+            if (action == null)
+                throw new NullPointerException();
+            int hi = getFence(), i = index;
+            if (i < hi) {
+                index = i + 1;
+                @SuppressWarnings("unchecked") 
+				//取出元素
+				E e = (E)list.elementData[i];
+                //给Consumer类函数
+				action.accept(e);
+                if (list.modCount != expectedModCount)
+                    throw new ConcurrentModificationException();
+                return true;
+            }
+            return false;
+        }
+        //顺序遍历处理所有剩下的元素
+        //Consumer类型，传入值处理
+        public void forEachRemaining(Consumer<? super E> action) {
+            int i, hi, mc; // hoist accesses and checks from loop
+            ArrayList<E> lst;
+			Object[] a;
+            if (action == null)
+                throw new NullPointerException();
+            //list集合不为空且元素不为空
+			if ((lst = list) != null && (a = lst.elementData) != null) {
+                //第一次使用时实例化时小于0；初始化
+				if ((hi = fence) < 0) {
+                    mc = lst.modCount;
+                    hi = lst.size;
+                }
+                else
+                    mc = expectedModCount;
+                if ((i = index) >= 0 && (index = hi) <= a.length) {
+                    for (; i < hi; ++i) {
+                        @SuppressWarnings("unchecked") 
+						E e = (E) a[i];
+                        action.accept(e);
+                    }
+                    if (lst.modCount == mc)
+                        return;
+                }
+            }
+            throw new ConcurrentModificationException();
+        }
+        //估算大小
+        public long estimateSize() {
+            return (long) (getFence() - index);
+        }
+         //打上特征值：、可以返回size
+        public int characteristics() {
+            //命令|大小|子序列大小
+			return Spliterator.ORDERED | Spliterator.SIZED | Spliterator.SUBSIZED;
+        }
+    }
+
+    @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
+        // figure out which elements are to be removed
+        // any exception thrown from the filter predicate at this stage
+        // will leave the collection unmodified
+        int removeCount = 0;
+        final BitSet removeSet = new BitSet(size);
+        final int expectedModCount = modCount;
+        final int size = this.size;
+        for (int i=0; modCount == expectedModCount && i < size; i++) {
+            @SuppressWarnings("unchecked")
+            final E element = (E) elementData[i];
+            //如果满足条件，则放入set中，删除元素个数加一
+			if (filter.test(element)) {
+                removeSet.set(i);
+                removeCount++;
+            }
+        }
+		//判断外部是否修改
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+
+        // shift surviving elements left over the spaces left by removed elements
+        //如果有移除元素
+		final boolean anyToRemove = removeCount > 0;
+        if (anyToRemove) {
+            final int newSize = size - removeCount;
+            for (int i=0, j=0; (i < size) && (j < newSize); i++, j++) {
+                i = removeSet.nextClearBit(i);
+                elementData[j] = elementData[i];
+            }
+			//将空元素置空
+            for (int k=newSize; k < size; k++) {
+                elementData[k] = null;  // Let gc do its work
+            }
+            this.size = newSize;
+            if (modCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
+            modCount++;
+        }
+
+        return anyToRemove;
+    }
+    //UnaryOperator 接受一个什么类型的参数，返回一个什么类型的参数
+    //对数组中的每一个元素进行一系列的操作，返回同样的元素，
+    //如果 List<Student> lists  将list集合中的每一个student姓名改为张三
+    //使用这个方法就非常方便
+    @Override
+    @SuppressWarnings("unchecked")
+    public void replaceAll(UnaryOperator<E> operator) {
+        Objects.requireNonNull(operator);
+        final int expectedModCount = modCount;
+        final int size = this.size;
+        for (int i=0; modCount == expectedModCount && i < size; i++) {
+            //取出每一个元素给operator的apply方法
+			elementData[i] = operator.apply((E) elementData[i]);
+        }
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+        modCount++;
+    }
+    //排序
+    @Override
+    @SuppressWarnings("unchecked")
+    public void sort(Comparator<? super E> c) {
+        final int expectedModCount = modCount;
+        Arrays.sort((E[]) elementData, 0, size, c);
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+        modCount++;
+    }
+}

@@ -1,0 +1,67 @@
+#include <iostream>
+#include <vector>
+
+using namespace std;
+class AbstractFile{
+    protected:
+        string name;
+    public :
+        AbstractFile(){
+            name="new";
+        }
+        AbstractFile(string name){
+            this->name=name;
+        }
+        virtual void out()=0;
+        ~AbstractFile(){}
+};
+class File : public AbstractFile{
+    public :
+        File(){
+        }
+        File(string name):AbstractFile(name){
+        }
+        void out(){
+            cout<<"File:"<<name<<endl;
+        }
+};
+class Filder :public AbstractFile{
+    private :
+        /*创建一个vector 对象
+        */
+        vector <AbstractFile*> vec;
+    public :
+        Filder(){
+        }
+        Filder(string name):AbstractFile(name){
+        }
+        void Add(AbstractFile* t){
+            //把数据从后面压入栈中，
+            //push_front,从前面压入
+            vec.push_back(t);
+        }
+        void out(){
+            cout<<"File:"<<name<<endl;
+            //此时的it是一个AbstractFile 指针
+            vector<AbstractFile*>::iterator it;
+            for(it=vec.begin();it!=vec.end();it++)
+                (*it)->out();
+        }
+ };
+int main()
+{
+    Filder *root1=new Filder("文件夹1");
+    Filder *root2=new Filder("文件夹2");
+    File *f1=new File("1.c");
+    File *f2=new File("2.c");
+    File *f3=new File("3.c");
+    File *w1=new File("1.word");
+    File *w2=new File("2.word");
+    root1->Add(f1);
+    root1->Add(f2);
+    root1->Add(f3);
+    root1->Add(root2);
+    root2->Add(w1);
+    root2->Add(w2);
+    root1->out();
+}
